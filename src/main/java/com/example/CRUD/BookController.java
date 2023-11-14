@@ -29,7 +29,6 @@ public class BookController {
         }
         return ResponseEntity.ok(authors);
     }
-
     @GetMapping("/filterbybook")
     public ResponseEntity<List<Book>>getBookByCategory(@RequestParam(required = false)String category ){
         List<Book> books;
@@ -37,6 +36,7 @@ public class BookController {
         if (category !=null){
             books = bookRepository.findBookByCategory(category);
         }else{
+
             books = bookRepository.findAll();
         }
         return ResponseEntity.ok(books);
