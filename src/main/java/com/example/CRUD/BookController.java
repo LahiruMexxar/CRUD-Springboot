@@ -2,6 +2,7 @@ package com.example.CRUD;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +18,7 @@ public class BookController {
     @Autowired
     private AuthorRepository authorRepository;
 
-    @GetMapping("/filter")
+    @GetMapping("/filterbyauthor")
     public ResponseEntity<List<Author>>getauthorbynationality(@RequestParam(required = false)String nationality ){
         List<Author> authors;
 
@@ -29,6 +30,23 @@ public class BookController {
         return ResponseEntity.ok(authors);
     }
 
+    @GetMapping("/filterbybook")
+    public ResponseEntity<List<Book>>getBookByCategory(@RequestParam(required = false)String category ){
+        List<Book> books;
+
+        if (category !=null){
+            books = bookRepository.findBookByCategory(category);
+        }else{
+            books = bookRepository.findAll();
+        }
+        return ResponseEntity.ok(books);
+    }
+
+    @GetMapping("/getall")
+    public ResponseEntity<List<Book>>getallbooks(){
+        List<Book> books = bookRepository.findAll();
+        return new ResponseEntity<>(books, HttpStatus.OK);
+    }
     @PostMapping
     public ResponseEntity<String> CreateBookWithAuthor (@RequestBody BookWithAuthorRequest request){
         Book book = new Book();
