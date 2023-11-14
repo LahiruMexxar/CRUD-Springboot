@@ -7,5 +7,7 @@ import java.util.List;
 
 @Repository
 public interface AuthorRepository extends JpaRepository<Author, Long> {
+
+    List<Author> findByNationality(String nationality);
 }
 

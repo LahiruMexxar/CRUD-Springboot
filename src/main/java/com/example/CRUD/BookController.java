@@ -17,13 +17,16 @@ public class BookController {
     @Autowired
     private AuthorRepository authorRepository;
 
-    @GetMapping
-//    public List<Book> getAllBooks(){
-//        return bookRepository.findAll();
-//    }
-    public ResponseEntity<List<Book>>getallbooks(){
-        List<Book> books = bookRepository.findAll();
-        return ResponseEntity.ok(books);
+    @GetMapping("/filter")
+    public ResponseEntity<List<Author>>getauthorbynationality(@RequestParam(required = false)String nationality ){
+        List<Author> authors;
+
+        if (nationality !=null){
+            authors = authorRepository.findByNationality(nationality);
+        }else{
+            authors = authorRepository.findAll();
+        }
+        return ResponseEntity.ok(authors);
     }
 
     @PostMapping

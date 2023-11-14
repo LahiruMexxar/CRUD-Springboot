@@ -10,5 +10,7 @@ import java.util.Collection;
 @Repository
 public interface BookRepository extends JpaRepository<Book,Long> {
 
+
+
 }
 
