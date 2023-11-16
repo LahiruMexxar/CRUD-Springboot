@@ -1,14 +1,22 @@
 package com.example.CRUD;
 
-public class BookWithAuthorRequest {
+import java.util.List;
 
+public class BookWithAuthorRequest {
     private String title;
     private String category;
     private double price;
 
-    private Long aid;
     private String name;
     private String nationality;
+
+    public BookWithAuthorRequest(String title, String category, double price, String name, String nationality) {
+        this.title = title;
+        this.category = category;
+        this.price = price;
+        this.name = name;
+        this.nationality = nationality;
+    }
 
     public String getTitle() {
         return title;
@@ -32,14 +40,6 @@ public class BookWithAuthorRequest {
 
     public void setPrice(double price) {
         this.price = price;
-    }
-
-    public Long getAid() {
-        return aid;
-    }
-
-    public void setAid(Long aid) {
-        this.aid = aid;
     }
 
     public String getName() {

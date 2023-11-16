@@ -49,8 +49,6 @@ public class Author {
         this.nationality = nationality;
     }
 
-
-
     public Author(String name, String nationality) {
     }
 
