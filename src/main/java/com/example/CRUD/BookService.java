@@ -6,10 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.PrimitiveIterator;
+import java.util.*;
 
 @Service
 public class BookService {
@@ -42,11 +39,24 @@ public class BookService {
                 book.setAuthor(savedAuthor);
                 bookRepository.save(book); }
             }
-            return new ResponseEntity<>(new ApiResponse<>(200, "Author and Books Created", savedAuthor), HttpStatus.CREATED);
+
+            //Fetch existing books saved on saved Author
+
+            List<Book> existingBooks = bookRepository.findByAuthor(savedAuthor);
+
+            //Construct the response with Code, Message and Payload
+
+            ApiResponse<Author> response = new ApiResponse<>(200,"Author and Books Created",savedAuthor);
+
+            response.setPayload(existingBooks);
+
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+
+           // return new ResponseEntity<>(new ApiResponse<>(200, "Author and Books Created", savedAuthor), HttpStatus.CREATED);
         } catch (DuplicateKeyException e) {
             return new ResponseEntity<>(new ApiResponse<>(500, e.getMessage(), null), HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            return new ResponseEntity<>(new ApiResponse<>(400, "An Error Occured" ), HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(new ApiResponse<>(400, "An Error Occured",null ), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

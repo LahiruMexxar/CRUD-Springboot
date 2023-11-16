@@ -45,10 +45,27 @@ public class BookController {
     }
 
     @GetMapping("/getall")
-    public ResponseEntity<List<Book>>getallbooks(){
-        List<Book> books = bookRepository.findAll();
-        return new ResponseEntity<>(books, HttpStatus.OK);
+    public ResponseEntity<ApiResponse<List<AuthorWithBooksRes>>>getAllAuthorAndBooks(){
+        try {
+            List<Author> authors = authorRepository.findAll();
+            List<AuthorWithBooksRes> authorResponse = new ArrayList<>();
+
+            for (Author author: authors){
+                List<Book> books = bookRepository.findByAuthor(author);
+                AuthorWithBooksRes response = new AuthorWithBooksRes(author,books);
+                authorResponse.add(response);
+            }
+            ApiResponse<List<AuthorWithBooksRes>> apiResponse = new ApiResponse<>(200,"data Retrieved", authorResponse);
+            return new ResponseEntity<>(apiResponse,HttpStatus.OK);
+        }catch (Exception e){
+            ApiResponse<List<AuthorWithBooksRes>> errorresposnse = new ApiResponse<>(500,"An Error Occurred", null);
+            return new ResponseEntity<>(errorresposnse, HttpStatus.OK);
+        }
     }
+//    public ResponseEntity<List<Book>>getallbooks(){
+//        List<Book> books = bookRepository.findAll();
+//        return new ResponseEntity<>(books, HttpStatus.OK);
+//    }
 
     // All PostMapping Methods
 
