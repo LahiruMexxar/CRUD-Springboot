@@ -1,14 +1,15 @@
 package com.example.CRUD;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/books")
@@ -19,18 +20,21 @@ public class BookController {
     @Autowired
     private AuthorRepository authorRepository;
     @Autowired
-    private BookService bookService;
+    private Services services;
     //All GetMapping Methods
 
-    @GetMapping("/filterbyauthor")
-    public ResponseEntity<List<Author>>getauthorbynationality(@RequestParam(required = false)String nationality ){
-        List<Author> authors;
-        if (nationality !=null){
-            authors = authorRepository.findByNationality(nationality);
-        }else{
-            authors = authorRepository.findAll();
+
+    //Get all books method
+    @GetMapping("/getallbooks")
+    public ResponseEntity<ApiResponse<List<Book>>>getallBooks(){
+        try{
+            List<Book> books = bookRepository.findAll();
+            ApiResponse<List<Book>> apiResponse = new ApiResponse<>(200,"Books Retrived",books);
+        return new ResponseEntity<>(apiResponse,HttpStatus.OK);
+        }catch (Exception e){
+            ApiResponse<List<Book>>errorResponse = new ApiResponse<>(500,"Internal Server Issue",null);
+            return new ResponseEntity<>(errorResponse,HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return ResponseEntity.ok(authors);
     }
     @GetMapping("/filterbybook")
     public ResponseEntity<List<Book>>getBookByCategory(@RequestParam(required = false)String category ){
@@ -94,8 +98,53 @@ public class BookController {
         Author author = request.getAuthor();
         List<Book> books = request.getBooks();
         //return values to Bookservice
-        return bookService.saveAuthorWithBooks(author,books);
+        return services.saveAuthorWithBooks(author,books);
     }
+
+    @PostMapping("/{authorId}/addBook")
+    public ResponseEntity<ApiResponse<List<Book>>> addBookToAuthor(@PathVariable Long authorId, @RequestBody List<Book> books) {
+        try {
+            // Check if the author exists
+            Optional<Author> authorOptional = authorRepository.findById(authorId);
+            if (authorOptional.isEmpty()) {
+                throw new NoSuchElementException("Author not found.");
+            }
+
+            Author author = authorOptional.get();
+            //using Books as an Arraylist
+            List<Book> savedbooks = new ArrayList<>();
+
+            for (Book book :books) {
+                // Check if a book with the same title already exists for the author
+                Optional<Book> existingBook = bookRepository.findByTitleAndAuthor(book.getTitle(), author);
+                if (existingBook.isPresent()) {
+                    throw new DuplicateKeyException("A book with the same title already exists for the author.");
+                }
+
+                // Add the book to the author
+                book.setAuthor(author);
+                Book savedBook = bookRepository.save(book);
+                savedbooks.add(savedBook);
+            }
+
+            ApiResponse<List<Book>> apiResponse = new ApiResponse<>(201, "Book added successfully", savedbooks);
+
+            //apiResponse.setPayload(existingBooks);
+
+            return new ResponseEntity<>(apiResponse, HttpStatus.CREATED);
+        } catch (NoSuchElementException e) {
+            ApiResponse<List<Book>> errorResponse = new ApiResponse<>(404, e.getMessage(), null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        } catch (DuplicateKeyException e) {
+            ApiResponse<List<Book>> errorResponse = new ApiResponse<>(400, e.getMessage(), null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            ApiResponse<List<Book>> errorResponse = new ApiResponse<>(500, "An error occurred while adding the book", null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
     @PutMapping
     public Book Updatebook (@PathVariable Long id , @RequestBody Book book) {
         if (bookRepository.existsById(id)) {

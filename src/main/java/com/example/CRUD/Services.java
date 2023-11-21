@@ -9,12 +9,13 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
-public class BookService {
+public class Services {
     @Autowired
     private BookRepository bookRepository;
     @Autowired
     private AuthorRepository authorRepository;
 
+    //used to add Author with Books
     public ResponseEntity<ApiResponse<Author>>saveAuthorWithBooks(Author author, List<Book> books) {
 
         try {
@@ -32,7 +33,7 @@ public class BookService {
                 Optional<Book> existingBook = bookRepository.findByTitleAndAuthor(book.getTitle(),savedAuthor);
 
                 if (existingBook.isPresent()){
-                  //Handiling the duplicate titles
+                    //Handiling the duplicate titles
                     throw new DuplicateKeyException("A book with the title'"+ book.getTitle()+ "'already exists");
                 }else{
              //add books with the saved author
@@ -59,5 +60,6 @@ public class BookService {
             return new ResponseEntity<>(new ApiResponse<>(400, "An Error Occured",null ), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 }
 

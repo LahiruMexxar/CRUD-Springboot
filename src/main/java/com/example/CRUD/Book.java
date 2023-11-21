@@ -15,14 +15,19 @@ public class Book {
     @JoinColumn(name = "Author_id")
     private Author author;
 
-    public Book() {
+    public Book(Long id, String title, String category, double price, Author author) {
         this.id = id;
         this.title = title;
         this.category = category;
         this.price = price;
+        this.author = author;
     }
 
     public Book(Long id, String title, String category, double price) {
+    }
+
+    public Book() {
+
     }
 
 
