@@ -144,18 +144,57 @@ public class BookController {
         }
     }
 
+    @PutMapping("/updatebook/{bookId}")
+    public ResponseEntity<ApiResponse<Book>>updateBook(@PathVariable Long bookId, @RequestBody Book updatedBook){
+        try{
+            // Check if the author with the given ID exists
+            Optional<Book>existingBookOptional = bookRepository.findById(bookId);
+            if (existingBookOptional.isEmpty()){
+                throw new NoSuchElementException("Book not found");
+            }
 
-    @PutMapping
-    public Book Updatebook (@PathVariable Long id , @RequestBody Book book) {
-        if (bookRepository.existsById(id)) {
-            book.setId(id);
-            return bookRepository.save(book);
+            // Get the existing book from the database
+            Book existingBook = existingBookOptional.get();
+
+            // Update the existing book with the values from the updated book
+            existingBook.setTitle(updatedBook.getTitle());
+            existingBook.setCategory(updatedBook.getCategory());
+            existingBook.setPrice(updatedBook.getPrice());
+
+            // Save the updated book
+            Book savedBook = bookRepository.save(existingBook);
+            ApiResponse<Book> apiResponse = new ApiResponse<>(200, "Book updated successfully", savedBook);
+            return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+        } catch (NoSuchElementException e) {
+            ApiResponse<Book> errorResponse = new ApiResponse<>(404, e.getMessage(), null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            ApiResponse<Book> errorResponse = new ApiResponse<>(500, "An error occurred while updating the Book", null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return null;
     }
 
-    @DeleteMapping
-    public void Deletebook (@PathVariable long id){
-        bookRepository.deleteById(id);
+    @DeleteMapping("/deletebook/{bookId}")
+    public ResponseEntity<ApiResponse<Book>> deleteAuthor(@PathVariable Long bookId) {
+        try {
+            // Check if the book with the given ID exists
+            Optional<Book> existingBookOptional = bookRepository.findById(bookId);
+            if (existingBookOptional.isPresent()) {
+                Book book = existingBookOptional.get();
+
+                //delete the Book
+                bookRepository.deleteById(bookId);
+
+                ApiResponse<Book> apiResponse = new ApiResponse<>(204, "Author and associated books deleted successfully", null);
+                return new ResponseEntity<>(apiResponse, HttpStatus.NO_CONTENT);
+            } else {
+                // If the author does not exist, return a 404 Not Found response
+                ApiResponse<Book> errorResponse = new ApiResponse<>(404, "Author not found", null);
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            ApiResponse<Book> errorResponse = new ApiResponse<>(500, "An error occurred while deleting the author", null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

@@ -53,36 +53,109 @@ public class AuthorController {
         return ResponseEntity.ok(authors);
     }
     @PostMapping("/addauthor")
-    public ResponseEntity<ApiResponse<Author>> addAuthor(@RequestBody Author author) {
+    public ResponseEntity<ApiResponse<List<Author>>> addManyAuthors(@RequestBody List<Author> authors) {
         try {
-            // Check if an author with the same name already exists
-            if (authorRepository.findByName(author.getName()).isPresent()) {
-                throw new DuplicateKeyException("Author with the same name already exists.");
-            }
-            // Save the author
-            Author savedAuthor = authorRepository.save(author);
+            List<Author> savedAuthors = new ArrayList<>();
 
-            ApiResponse<Author> apiResponse = new ApiResponse<>(201, "Author added successfully", savedAuthor);
+            for (Author author : authors) {
+                // Check if an author with the same name already exists
+                Optional<Author> existingAuthor = authorRepository.findByName(author.getName());
+                if (existingAuthor.isPresent()) {
+                    throw new DuplicateKeyException("Author with the same name already exists.");
+                }
+
+                // Save the author
+                Author savedAuthor = authorRepository.save(author);
+                savedAuthors.add(savedAuthor);
+            }
+
+            ApiResponse<List<Author>> apiResponse = new ApiResponse<>(201, "Authors added successfully", savedAuthors);
             return new ResponseEntity<>(apiResponse, HttpStatus.CREATED);
         } catch (DuplicateKeyException e) {
-            ApiResponse<Author> errorResponse = new ApiResponse<>(400, e.getMessage(), null);
+            ApiResponse<List<Author>> errorResponse = new ApiResponse<>(400, e.getMessage(), null);
             return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
-            ApiResponse<Author> errorResponse = new ApiResponse<>(500, "An error occurred while adding the author", null);
+            ApiResponse<List<Author>> errorResponse = new ApiResponse<>(500, "An error occurred while adding the authors", null);
             return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    @PutMapping
-    public Author UpdateAuthor (@PathVariable Long id, @RequestBody Author author){
-        if(authorRepository.existsById(id)){
-            author.setId(id);
-            return authorRepository.save(author);
+
+    @PutMapping("/updateauthor/{authorId}")
+    public ResponseEntity<ApiResponse<Author>> updateAuthor(@PathVariable Long authorId, @RequestBody Author updatedAuthor) {
+        try {
+            // Check if the author with the given ID exists
+            Optional<Author> existingAuthorOptional = authorRepository.findById(authorId);
+            if (existingAuthorOptional.isEmpty()) {
+                throw new NoSuchElementException("Author not found.");
+            }
+
+            // Get the existing author from the database
+            Author existingAuthor = existingAuthorOptional.get();
+
+            // Update the existing author with the values from the updated author
+            existingAuthor.setName(updatedAuthor.getName());
+            existingAuthor.setNationality(updatedAuthor.getNationality());
+
+            // Save the updated author
+            Author savedAuthor = authorRepository.save(existingAuthor);
+
+            ApiResponse<Author> apiResponse = new ApiResponse<>(200, "Author updated successfully", savedAuthor);
+            return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+        } catch (NoSuchElementException e) {
+            ApiResponse<Author> errorResponse = new ApiResponse<>(404, e.getMessage(), null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            ApiResponse<Author> errorResponse = new ApiResponse<>(500, "An error occurred while updating the author", null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return null;
     }
 
-    @DeleteMapping
-    public void deleteAuthor (@PathVariable Long id){
-         authorRepository.deleteById(id);
+    @DeleteMapping("/deleteauthor")
+    public ResponseEntity<ApiResponse<Void>> deleteAuthors(@RequestBody List<Long> authorIds) {
+        try {
+            for (Long authorId : authorIds) {
+                // Check if the author exists in the database
+                Optional<Author> existingAuthorOptional = authorRepository.findById(authorId);
+                if (existingAuthorOptional.isPresent()) {
+                    // If the author exists, delete it
+                    authorRepository.deleteById(authorId);
+                }
+            }
+
+            ApiResponse<Void> apiResponse = new ApiResponse<>(204, "Authors deleted successfully", null);
+            return new ResponseEntity<>(apiResponse, HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            ApiResponse<Void> errorResponse = new ApiResponse<>(500, "An error occurred while deleting the authors", null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @DeleteMapping("/deleteAuthor/{authorId}")
+    public ResponseEntity<ApiResponse<Void>> deleteAuthor(@PathVariable Long authorId) {
+        try {
+            // Check if the author with the given ID exists
+            Optional<Author> existingAuthorOptional = authorRepository.findById(authorId);
+            if (existingAuthorOptional.isPresent()) {
+                Author author = existingAuthorOptional.get();
+
+                // Delete all books associated with the author
+                bookRepository.deleteByAuthor(author);
+
+                // Then, delete the author
+                authorRepository.deleteById(authorId);
+
+                ApiResponse<Void> apiResponse = new ApiResponse<>(204, "Author and associated books deleted successfully", null);
+                return new ResponseEntity<>(apiResponse, HttpStatus.NO_CONTENT);
+            } else {
+                // If the author does not exist, return a 404 Not Found response
+                ApiResponse<Void> errorResponse = new ApiResponse<>(404, "Author not found", null);
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            ApiResponse<Void> errorResponse = new ApiResponse<>(500, "An error occurred while deleting the author", null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
+
+
